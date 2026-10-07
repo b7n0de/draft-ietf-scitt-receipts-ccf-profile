@@ -266,11 +266,6 @@ Table of Contents
    4.  Hash the resulting byte string with H (SHA256 for
        CCF_LEDGER_SHA256).
 
-   This procedure covers Signed Statements submitted as a tagged
-   COSE_Sign1 with an attached payload and definite-length items in
-   shortest form; detached, untagged, indefinite-length or non-shortest-
-   form encodings are not covered.
-
 3.  CCF Inclusion Proofs
 
    CCF inclusion proofs consist of a list of digests tagged with a

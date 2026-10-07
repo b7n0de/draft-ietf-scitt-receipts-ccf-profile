@@ -179,7 +179,6 @@ This is the Signed Statement, not the Transparent Statement of {{Section 7 of -s
 1. Keep tag 18, and keep the encodings of the protected header, payload and signature byte for byte as received.
 1. Hash the resulting byte string with `H` (`SHA256` for `CCF_LEDGER_SHA256`).
 
-This procedure covers Signed Statements submitted as a tagged `COSE_Sign1` with an attached payload and definite-length items in shortest form; detached, untagged, indefinite-length or non-shortest-form encodings are not covered.
 
 # CCF Inclusion Proofs {#ccf-inclusion-proofs}
 

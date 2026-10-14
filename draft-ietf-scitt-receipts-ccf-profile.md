@@ -46,6 +46,7 @@ author:
   country: UK
 
 normative:
+  RFC8949:
   RFC9162:
   RFC9942: cose-receipts
   RFC9943: scitt-architecture
@@ -220,6 +221,7 @@ The payload of the signature is the CCF ledger Merkle root digest, and MUST be d
 
 After decoding each `ccf-inclusion-proof` byte string, the Verifier MUST check the decoded value against the CDDL of {{ccf-inclusion-proof-cddl}}, including {{ccf-leaf-cddl}} for the leaf, and MUST reject the proof before `compute_root` is called if any check fails. In particular:
 
+* the byte string is valid CBOR ({{Section 5.3.1 of RFC8949}}), in particular the map has no duplicate keys;
 * the map has the keys `leaf` (1) and `path` (2);
 * `internal-transaction-hash` is a byte string of exactly HASH_SIZE (32) bytes;
 * `internal-evidence` is a text string of 1 to 1024 bytes of valid UTF-8;

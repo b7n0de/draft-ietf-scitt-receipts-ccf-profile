@@ -382,7 +382,7 @@ unprotected-header-map = {
 - inclusion-proof (label: -1): Inclusion proofs. Value type: array of `ccf-inclusion-proof`.
 - consistency-proof (label: -2): Consistency proofs. Value type: array of `ccf-consistency-proof`.
 
-At least one of `inclusion-proof` and `consistency-proof` MUST be present. All proofs in a receipt recompute the same root (the newer root, for consistency proofs), which is the detached payload. The proof type is conveyed by the key of the `vdp` map, as specified by {{-cose-receipts}}; it is not carried in a separate header parameter.
+At least one of `inclusion-proof` and `consistency-proof` MUST be present. All proofs in a receipt recompute the same root (the newer root, for consistency proofs), which is the detached payload. The proof type is conveyed by the key of the `vdp` map, as specified by {{-cose-receipts}}; it is not carried in a separate header parameter. A Verifier MUST reject a receipt whose `vdp` map is not valid CBOR ({{Section 5.3.1 of RFC8949}}) or does not match `verifiable-proofs` in {{unprotected-header-map-cddl}}, before applying either verification algorithm.
 
 # Privacy Considerations
 

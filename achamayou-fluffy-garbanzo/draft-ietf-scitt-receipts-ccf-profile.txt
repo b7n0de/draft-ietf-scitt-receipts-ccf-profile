@@ -333,9 +333,10 @@ Table of Contents
 3.2.  Inclusion Proof Verification Algorithm
 
    After decoding each ccf-inclusion-proof byte string, the Verifier
-   MUST check the decoded value against the CDDL of Figure 6, including
-   Figure 4 for the leaf, and MUST reject the proof before compute_root
-   is called if any check fails.  In particular:
+   MUST validate that the decoded value is well constructed with regard
+   to the schema defined in Figure 6, including Figure 4 for the leaf,
+   and MUST reject the proof before compute_root is called if any check
+   fails.  In particular:
 
    *  the byte string is valid CBOR (Section 5.3.1 of [RFC8949]), in
       particular the map has no duplicate keys;
@@ -396,8 +397,8 @@ Table of Contents
    INCLUSION_PROOF_LABEL is the inclusion-proof proof type label (-1),
    both defined by [RFC9942].  Each element of proofs is a ccf-
    inclusion-proof, i.e., a byte string wrapping a CBOR-encoded map,
-   which is decoded and validated against Figure 6 before compute_root
-   is applied.
+   which is decoded and validated against the schema defined in Figure 6
+   before compute_root is applied.
 
    statement_digest is the data-hash of the candidate Signed Statement,
    computed by the Verifier from the bytes of that Signed Statement as
@@ -617,8 +618,8 @@ Table of Contents
    An inclusion receipt only establishes the inclusion of a Signed
    Statement for a Verifier that computes data-hash from the bytes of
    the candidate Signed Statement itself, as described in Section 2.2,
-   and that validates every proof against Figure 6 before recomputing
-   its root, as required in Figure 7.
+   and that validates every proof against the schema defined in Figure 6
+   before recomputing its root, as required in Figure 7.
 
 7.4.  Consistency Receipts
 

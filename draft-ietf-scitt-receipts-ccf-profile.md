@@ -219,7 +219,7 @@ The payload of the signature is the CCF ledger Merkle root digest, and MUST be d
 
 ## Inclusion Proof Verification Algorithm
 
-After decoding each `ccf-inclusion-proof` byte string, the Verifier MUST check the decoded value against the CDDL of {{ccf-inclusion-proof-cddl}}, including {{ccf-leaf-cddl}} for the leaf, and MUST reject the proof before `compute_root` is called if any check fails. In particular:
+After decoding each `ccf-inclusion-proof` byte string, the Verifier MUST validate that the decoded value is well constructed with regard to the schema defined in {{ccf-inclusion-proof-cddl}}, including {{ccf-leaf-cddl}} for the leaf, and MUST reject the proof before `compute_root` is called if any check fails. In particular:
 
 * the byte string is valid CBOR ({{Section 5.3.1 of RFC8949}}), in particular the map has no duplicate keys;
 * the map has the keys `leaf` (1) and `path` (2);
@@ -263,7 +263,7 @@ verify_inclusion_receipt(inclusion_receipt, statement_digest):
 ~~~
 {: #ccf-inclusion-receipt-verification title="CCF Inclusion Receipt Verification"}
 
-`VDP_LABEL` is the `vdp` header parameter label (396) and `INCLUSION_PROOF_LABEL` is the `inclusion-proof` proof type label (-1), both defined by {{-cose-receipts}}. Each element of `proofs` is a `ccf-inclusion-proof`, i.e., a byte string wrapping a CBOR-encoded map, which is decoded and validated against {{ccf-inclusion-proof-cddl}} before `compute_root` is applied.
+`VDP_LABEL` is the `vdp` header parameter label (396) and `INCLUSION_PROOF_LABEL` is the `inclusion-proof` proof type label (-1), both defined by {{-cose-receipts}}. Each element of `proofs` is a `ccf-inclusion-proof`, i.e., a byte string wrapping a CBOR-encoded map, which is decoded and validated against the schema defined in {{ccf-inclusion-proof-cddl}} before `compute_root` is applied.
 
 `statement_digest` is the `data-hash` of the candidate Signed Statement, computed by the Verifier from the bytes of that Signed Statement as described in {{transaction-components}}; it MUST NOT be taken from the receipt. Every proof in the receipt MUST have a `data-hash` equal to `statement_digest`. This defines how the inclusion proofs of this profile are consumed ({{Section 4.4.1 of -cose-receipts}}), by applying them to the bytes of a candidate entry ({{Section 5.2.1 of -cose-receipts}}).
 
@@ -410,7 +410,7 @@ An operator has the ability to start successor networks with a distinct identity
 
 ## Inclusion Proof Validation
 
-An inclusion receipt only establishes the inclusion of a Signed Statement for a Verifier that computes `data-hash` from the bytes of the candidate Signed Statement itself, as described in {{transaction-components}}, and that validates every proof against {{ccf-inclusion-proof-cddl}} before recomputing its root, as required in {{ccf-inclusion-receipt-verification}}.
+An inclusion receipt only establishes the inclusion of a Signed Statement for a Verifier that computes `data-hash` from the bytes of the candidate Signed Statement itself, as described in {{transaction-components}}, and that validates every proof against the schema defined in {{ccf-inclusion-proof-cddl}} before recomputing its root, as required in {{ccf-inclusion-receipt-verification}}.
 
 ## Consistency Receipts
 

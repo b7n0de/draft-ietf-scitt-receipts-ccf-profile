@@ -258,7 +258,8 @@ Table of Contents
 
    1.  Take the COSE_Sign1 of the Transparent Statement.
 
-   2.  Replace its unprotected header with an empty map.
+   2.  Replace its unprotected header with an empty map (Section 6.3 of
+       [RFC9943]).
 
    3.  Keep tag 18, and keep the encoded values of the protected header,
        payload and signature as received.

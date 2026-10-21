@@ -196,12 +196,12 @@ ccf-proof-element = [
 
 ccf-inclusion-proof = bstr .cbor {
   &(leaf: 1) => ccf-leaf
-  &(path: 2) => [+ ccf-proof-element]
+  &(path: 2) => [* ccf-proof-element]
 }
 ~~~
 {: #ccf-inclusion-proof-cddl title="CCF Inclusion Proof CDDL"}
 
-Unlike some other tree algorithms, neither the index of the element nor the size of the tree is explicit in the inclusion proof. Read from the leaf up, the left-or-right bits are the binary decomposition of the index for the first `k` elements, where `k` is the largest power of two not greater than the tree size; for later elements the proof may have fewer elements than the depth of the index, and the index cannot be read from the proof alone. The `path` is never empty: single-transaction ledgers, that is trees of size 1 whose only inclusion proof would have an empty path, are out of scope for this profile.
+Unlike some other tree algorithms, neither the index of the element nor the size of the tree is explicit in the inclusion proof. Read from the leaf up, the left-or-right bits are the binary decomposition of the index for the first `k` elements, where `k` is the largest power of two not greater than the tree size; for later elements the proof may have fewer elements than the depth of the index, and the index cannot be read from the proof alone. The `path` is empty for a tree of size 1, whose root is the leaf hash.
 
 ## CCF Inclusion Proof Signature {#ccf-inclusion-proof-signature}
 
@@ -226,7 +226,7 @@ After decoding each `ccf-inclusion-proof` byte string, the Verifier MUST validat
 * `internal-transaction-hash` is a byte string of exactly HASH_SIZE (32) bytes;
 * `internal-evidence` is a text string of 1 to 1024 bytes of valid UTF-8;
 * `data-hash` is a byte string of exactly HASH_SIZE (32) bytes;
-* `path` is a non-empty array, each element of which is an array of exactly two items: a boolean and a byte string of exactly HASH_SIZE (32) bytes.
+* `path` is an array, each element of which is an array of exactly two items: a boolean and a byte string of exactly HASH_SIZE (32) bytes.
 
 Without these checks, since leaf and interior node hashes are not domain separated, an oversized path element lets an existing leaf be recomputed as if it were an interior node, so that a proof for a leaf and `data-hash` of the attacker's choosing still recomputes a validly signed root (a second-preimage-style forgery).
 

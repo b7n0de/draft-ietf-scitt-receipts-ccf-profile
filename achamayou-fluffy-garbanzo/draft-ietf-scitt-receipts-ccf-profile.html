@@ -1198,10 +1198,7 @@ svg {
                 <p id="section-toc.1-1.7.2.2.1"><a href="#section-7.2" class="auto internal xref">7.2</a>.  <a href="#name-operators" class="internal xref">Operators</a></p>
 </li>
               <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.3">
-                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-inclusion-proof-validation" class="internal xref">Inclusion Proof Validation</a></p>
-</li>
-              <li class="compact toc ulBare ulEmpty" id="section-toc.1-1.7.2.4">
-                <p id="section-toc.1-1.7.2.4.1"><a href="#section-7.4" class="auto internal xref">7.4</a>.  <a href="#name-consistency-receipts" class="internal xref">Consistency Receipts</a></p>
+                <p id="section-toc.1-1.7.2.3.1"><a href="#section-7.3" class="auto internal xref">7.3</a>.  <a href="#name-consistency-receipts" class="internal xref">Consistency Receipts</a></p>
 </li>
             </ul>
 </li>
@@ -1728,20 +1725,12 @@ Clients can mitigate this risk in two ways: by regularly auditing the consistenc
 <p id="section-7.2-1">An operator has the ability to start successor networks with a distinct identity. The operator of a CCF network can recover the service by starting a successor network, for example a new CCF network with its own service identity, that endorses the ledger state of the previous instance. This provides service continuity after a catastrophic failure of a majority of the nodes. However, a malicious operator could exploit this mechanism and truncate the ledger’s history by initializing the successor network from an earlier ledger prefix, thereby omitting some later entries. Clients can mitigate this risk by auditing the successor ledger and verifying that their latest known receipts from the prior service are included in the successor’s ledger.<a href="#section-7.2-1" class="pilcrow">¶</a></p>
 </section>
 </div>
-<div id="inclusion-proof-validation">
-<section id="section-7.3">
-        <h3 id="name-inclusion-proof-validation">
-<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-inclusion-proof-validation" class="section-name selfRef">Inclusion Proof Validation</a>
-        </h3>
-<p id="section-7.3-1">An inclusion receipt only establishes the inclusion of a Signed Statement for a Verifier that computes <code>data-hash</code> from the bytes of the candidate Signed Statement itself, as described in <a href="#transaction-components" class="auto internal xref">Section 2.2</a>, and that validates every proof against the schema defined in <a href="#ccf-inclusion-proof-cddl" class="auto internal xref">Figure 6</a> before recomputing its root, as required in <a href="#ccf-inclusion-receipt-verification" class="auto internal xref">Figure 7</a>.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
-</section>
-</div>
 <div id="consistency-receipts">
-<section id="section-7.4">
+<section id="section-7.3">
         <h3 id="name-consistency-receipts">
-<a href="#section-7.4" class="section-number selfRef">7.4. </a><a href="#name-consistency-receipts" class="section-name selfRef">Consistency Receipts</a>
+<a href="#section-7.3" class="section-number selfRef">7.3. </a><a href="#name-consistency-receipts" class="section-name selfRef">Consistency Receipts</a>
         </h3>
-<p id="section-7.4-1">A consistency receipt relates two roots and establishes nothing about ledger contents on its own. Verifiers <span class="bcp14">MUST</span> compare the recomputed older root with a root they have already verified, not with one supplied alongside the receipt. Consistency receipts also cannot provide guarantees about the correct application of Registration Policies, which requires additional material as outlined in <span><a href="https://rfc-editor.org/rfc/rfc9943#section-5.1.1.2" class="relref">Section 5.1.1.2</a> of [<a href="#RFC9943" class="cite xref">RFC9943</a>]</span>.<a href="#section-7.4-1" class="pilcrow">¶</a></p>
+<p id="section-7.3-1">A consistency receipt relates two roots and establishes nothing about ledger contents on its own. Verifiers <span class="bcp14">MUST</span> compare the recomputed older root with a root they have already verified, not with one supplied alongside the receipt. Consistency receipts also cannot provide guarantees about the correct application of Registration Policies, which requires additional material as outlined in <span><a href="https://rfc-editor.org/rfc/rfc9943#section-5.1.1.2" class="relref">Section 5.1.1.2</a> of [<a href="#RFC9943" class="cite xref">RFC9943</a>]</span>.<a href="#section-7.3-1" class="pilcrow">¶</a></p>
 </section>
 </div>
 </section>

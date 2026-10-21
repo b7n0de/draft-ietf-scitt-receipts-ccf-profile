@@ -261,7 +261,11 @@ ccf-consistency-proof = bstr .cbor {
 ~~~
 {: #ccf-consistency-proof-cddl title="CCF Consistency Proof CDDL"}
 
-The `anchor` MUST be the root of the subtree covering transactions `T[m - 2^t], ..., T[m - 1]`, where `2^t` is the largest power of two dividing `m`; when `m` is a power of two, the anchor is `R_m`. The `path` lists the sibling of each node on the path from the anchor to `R_n`, tagged as in inclusion proofs. Left siblings belong to both trees and right siblings only to the newer one, so folding the anchor with the left siblings alone yields `R_m`, and with all siblings `R_n`. Neither tree size is needed for verification. Apart from the tags, `path` holds the same digests in the same order as the consistency proof of {{Section 2.1.4.1 of RFC9162}} for the same sizes, with the anchor as the first element of that proof when `m` is not a power of two.
+The `anchor` MUST be the root of the subtree covering transactions `T[m - 2^t], ..., T[m - 1]`, where `2^t` is the largest power of two dividing `m`; when `m` is a power of two, the anchor is `R_m`. The `path` lists the sibling of each node on the path from the anchor to `R_n`, tagged as in inclusion proofs. Left siblings belong to both trees and right siblings only to the newer one, so folding the anchor with the left siblings alone yields `R_m`, and with all siblings `R_n`. Apart from the tags, `path` holds the digests of the same subtrees, in the same order, as the consistency proof of {{Section 2.1.4.1 of RFC9162}} for the same sizes, with the anchor as the first element of that proof when `m` is not a power of two. The digests themselves are those of the Merkle Tree Hash of {{merkle-tree-shape}}, not of {{RFC9162}}, which prefixes leaves and nodes differently.
+
+The first element of `path` MUST be a right sibling (`left` is `false`): the anchor is the last complete subtree of the older tree, so its first sibling can only hold transactions appended after `T[m - 1]`. A proof whose first element is a left sibling does not relate two distinct tree sizes and MUST be rejected. In particular, there is no consistency proof for `m == n`.
+
+Neither tree size is carried by the proof, and verification does not establish `m`, `n`, or that the anchor is the node required above. What verification establishes is that every transaction of the tree with root `R_m` is at the same position in the tree with root `R_n` ({{consistency-receipts-security}}); the anchor requirement fixes a canonical encoding of that fact, and a Verifier that accepts a non-canonical encoding accepts nothing more.
 
 ## CCF Consistency Proof Signature
 
@@ -269,7 +273,7 @@ The proof signature for a CCF consistency proof is a `COSE_Sign1` with the same 
 
 * `vdp` (label 396): map. It MUST contain the `consistency-proof` (-2) key, whose value is an array of one or more `ccf-consistency-proof` values, each relating one older root to the newer root.
 
-The payload is the newer root `R_n`, and MUST be detached. When the array contains more than one consistency proof, every proof MUST compute to the same newer root. The older root `R_m` is not carried by the receipt: the verifier already holds it, typically as the root recomputed from an inclusion receipt ({{ccf-inclusion-receipt-verification}}), and checks that the proof recomputes it.
+The payload is the newer root `R_n`, and MUST be detached. When the array contains more than one consistency proof, every proof MUST compute to the same newer root, and a Verifier MUST reject the receipt if any proof computes to a different one. The older root `R_m` is not carried by the receipt: the verifier already holds it, typically as the root recomputed from an inclusion receipt ({{ccf-inclusion-receipt-verification}}), and checks that at least one proof recomputes it. Other proofs in the same array may start from other older roots.
 
 ## Consistency Proof Verification Algorithm
 
@@ -296,22 +300,27 @@ verify_consistency_receipt(consistency_receipt, older_root):
   assert(len(proofs) > 0)
   assert(consistency_receipt.payload == nil)
 
-  let payloads = []
+  let payload = nil
+  let older_root_found = false
   for proof in proofs:
+      # The first sibling of the anchor is in the newer tree only
+      assert(proof.path[0].left == false)
       let older, newer = compute_roots(proof)
+      # Every proof must compute to the same newer root
+      assert(payload == nil or newer == payload)
+      payload := newer
       if older == older_root:
-          payloads.append(newer)
+          older_root_found := true
   # At least one proof must start from older_root
-  assert(len(payloads) > 0)
+  assert(older_root_found)
 
-  for payload in payloads:
-      # Use the newer Merkle Root as the detached payload
-      assert(verify_cose(consistency_receipt, payload))
+  # Use the common newer Merkle Root as the detached payload
+  assert(verify_cose(consistency_receipt, payload))
   return true
 ~~~
 {: #ccf-consistency-receipt-verification title="CCF Consistency Receipt Verification"}
 
-`CONSISTENCY_PROOF_LABEL` is the `consistency-proof` proof type label (-2) defined by {{-cose-receipts}}. Each element of `proofs` is a `ccf-consistency-proof`, i.e., a byte string wrapping a CBOR-encoded map, which is decoded before `compute_roots` is applied. The comparison with `older_root` binds the receipt to a state the verifier already trusts: a receipt in which no proof recomputes `older_root` proves nothing about that state. It also confirms that the anchor is a node of that state, but not that it is the anchor required in {{ccf-consistency-proofs}}, which cannot be checked without knowing `m`.
+`CONSISTENCY_PROOF_LABEL` is the `consistency-proof` proof type label (-2) defined by {{-cose-receipts}}. Each element of `proofs` is a `ccf-consistency-proof`, i.e., a byte string wrapping a CBOR-encoded map, which is decoded before `compute_roots` is applied. All proofs are folded before the signature is checked, so that a receipt in which any proof computes to a different newer root is rejected, whichever proof the Verifier is interested in. The comparison with `older_root` binds the receipt to a state the verifier already trusts: a receipt in which no proof recomputes `older_root` proves nothing about that state. It also confirms that the anchor is a node of that state, but not that it is the anchor required in {{ccf-consistency-proofs}}, which is not needed for the guarantee the receipt provides ({{consistency-receipts-security}}).
 
 # Usage in COSE Receipts {#receipt-usage}
 
@@ -380,13 +389,15 @@ CCF networks of nodes rely on executing in TEEs to secure their function, in par
 A compromise in the TEE platform used to execute the network may allow an attacker to produce invalid and divergent ledger branches.
 Clients can mitigate this risk in two ways: by regularly auditing the consistency of the CCF ledger, for instance by verifying consistency receipts ({{ccf-consistency-receipt-verification}}) from roots they hold to the current root; and by regularly fetching attestation information about the TEE instances, available in the ledger and from the network itself, and confirming that the nodes composing the network are running up-to-date, trusted platform components.
 
-## Operators
+## Operators {#operators}
 
 An operator has the ability to start successor networks with a distinct identity. The operator of a CCF network can recover the service by starting a successor network, for example a new CCF network with its own service identity, that endorses the ledger state of the previous instance. This provides service continuity after a catastrophic failure of a majority of the nodes. However, a malicious operator could exploit this mechanism and truncate the ledger’s history by initializing the successor network from an earlier ledger prefix, thereby omitting some later entries. Clients can mitigate this risk by auditing the successor ledger and verifying that their latest known receipts from the prior service are included in the successor’s ledger.
 
-## Consistency Receipts
+## Consistency Receipts {#consistency-receipts-security}
 
-A consistency receipt relates two roots and establishes nothing about ledger contents on its own. Verifiers MUST compare the recomputed older root with a root they have already verified, not with one supplied alongside the receipt. Consistency receipts also cannot provide guarantees about the correct application of Registration Policies, which requires additional material as outlined in {{Section 5.1.1.2 of -scitt-architecture}}.
+A consistency receipt relates two roots and establishes nothing about ledger contents on its own. Verifiers MUST compare the recomputed older root with a root they have already verified, not with one supplied alongside the receipt. Which signing key a Verifier accepts for a consistency receipt, including one issued by a successor network as described in {{operators}}, is determined by the Verifier's trust policy as for any Receipt of {{-cose-receipts}}, and is not constrained by this profile. Consistency receipts also cannot provide guarantees about the correct application of Registration Policies, which requires additional material as outlined in {{Section 5.1.1.2 of -scitt-architecture}}.
+
+A consistency proof carries no tree sizes, and the signature covers only the newer root, so sizes cannot be authenticated by the receipt. None is needed for the guarantee it provides. The older root is already trusted by the Verifier, so an anchor and left siblings that fold to it are, barring a second preimage of `H`, nodes of the older tree; the newer root is signed, so right siblings that fold to it are nodes of the newer tree. Since left siblings are shared by both foldings and right siblings only extend the newer one, a proof that passes {{ccf-consistency-receipt-verification}} shows that every transaction of the older tree is at the same position in the newer tree. This holds whether or not the anchor is the canonical node of {{ccf-consistency-proofs}}: a non-canonical anchor opens part of the older tree needlessly but does not change what is proved. A Verifier that needs the sizes `m` or `n` of the two trees, for instance to check the shape of the proof against {{Section 2.1.4.1 of RFC9162}}, MUST obtain them from a source it trusts independently of the receipt; this document does not define one.
 
 # IANA Considerations
 

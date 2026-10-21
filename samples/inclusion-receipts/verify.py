@@ -20,8 +20,10 @@ vdp schema. validate-cbor-examples.sh separately checks the receipt schemas.
 """
 import glob
 import hashlib
+import io
 import os
 import sys
+from collections.abc import Mapping
 
 import cbor2
 from cryptography.exceptions import InvalidSignature
@@ -113,12 +115,20 @@ def verify_inclusion_receipt(raw, key, checks=True):
         raise Refused("protected header")
     if payload is not None:
         raise Refused("payload is not detached")
-    proofs = unprotected[VDP][INCLUSION_PROOF]
-    if not proofs:
+    vdp = unprotected.get(VDP) if isinstance(unprotected, Mapping) else None
+    if not isinstance(vdp, Mapping):
+        raise Refused("no vdp map")
+    proofs = vdp.get(INCLUSION_PROOF)
+    if not (isinstance(proofs, (list, tuple)) and proofs):
         raise Refused("no inclusion proof")
     for proof_bytes in proofs:
+        if not isinstance(proof_bytes, bytes):
+            raise Refused("proof is not a byte string")
         try:
-            proof = cbor2.loads(proof_bytes, str_errors="strict" if checks else "surrogateescape")
+            fp = io.BytesIO(proof_bytes)
+            proof = cbor2.load(fp, str_errors="strict" if checks else "surrogateescape")
+            if fp.read(1):
+                raise ValueError("trailing bytes after the map")
         except Exception as e:
             raise Refused(f"proof is not valid CBOR: {e}")
         if checks:

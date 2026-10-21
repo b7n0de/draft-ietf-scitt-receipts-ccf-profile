@@ -408,10 +408,6 @@ Clients can mitigate this risk in two ways: by regularly auditing the consistenc
 
 An operator has the ability to start successor networks with a distinct identity. The operator of a CCF network can recover the service by starting a successor network, for example a new CCF network with its own service identity, that endorses the ledger state of the previous instance. This provides service continuity after a catastrophic failure of a majority of the nodes. However, a malicious operator could exploit this mechanism and truncate the ledger’s history by initializing the successor network from an earlier ledger prefix, thereby omitting some later entries. Clients can mitigate this risk by auditing the successor ledger and verifying that their latest known receipts from the prior service are included in the successor’s ledger.
 
-## Inclusion Proof Validation
-
-An inclusion receipt only establishes the inclusion of a Signed Statement for a Verifier that computes `data-hash` from the bytes of the candidate Signed Statement itself, as described in {{transaction-components}}, and that validates every proof against the schema defined in {{ccf-inclusion-proof-cddl}} before recomputing its root, as required in {{ccf-inclusion-receipt-verification}}.
-
 ## Consistency Receipts
 
 A consistency receipt relates two roots and establishes nothing about ledger contents on its own. Verifiers MUST compare the recomputed older root with a root they have already verified, not with one supplied alongside the receipt. Consistency receipts also cannot provide guarantees about the correct application of Registration Policies, which requires additional material as outlined in {{Section 5.1.1.2 of -scitt-architecture}}.

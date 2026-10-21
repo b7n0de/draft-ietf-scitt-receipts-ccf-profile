@@ -1,0 +1,46 @@
+# Sample CCF inclusion receipts with an empty path
+
+Test vectors for inclusion receipts whose proof has an empty `path`, which the draft allows for a tree of size 1. Each `.cbor` file is one receipt, a tagged `COSE_Sign1` (`CCF_Receipt` in `../cose-receipt.cddl`) with one `ccf-inclusion-proof` in `vdp[-1]`.
+
+All receipts are signed with deterministic ECDSA (RFC 6979) under one fixed test key, whose public key is in `keys.cbor` (a COSE_KeySet: ES384, P-384, kid `sonde-kid-1`). All are for the statement digest `SHA-256("statement")` = `b111c6e1d318f203063e5c16bab43c108326af0aa2f7b65760c95547a43dbe52`; no Signed Statement is included.
+
+The leaves:
+
+```
+L = [ internal-transaction-hash: SHA-256("its"),
+      internal-evidence:         "ce:2.5:" followed by 64 "a",
+      data-hash:                 SHA-256("statement") ]
+```
+
+The `root-as-leaf` vectors take a tree of two leaves, `L` on the left and a leaf `R` on the right, and write its root as a leaf with an empty path:
+
+```
+internal-transaction-hash = HASH(d(L))          the left child
+internal-evidence         = d(R)                the 96-byte serialization of R
+data-hash                 = empty
+```
+
+where `d` is the serialization of Transaction Components. The leaf hash of that "leaf" is `HASH(HASH(d(L)) || HASH(d(R)))`, the root of the tree, and the signature over that root is valid. Leaf and node hashes are not domain separated; what refuses these receipts is the leaf schema and the comparison of `data-hash` with the statement digest.
+
+## Files
+
+| Path | Expected | Refused by | Draft section |
+|---|---|---|---|
+| `valid/01-one-leaf-empty-path.cbor` | verifies, root `07a9c2f9dc15fedb52f83d2fc35d375e4b6720ffad9e389cc711de307802ce3a` | | 3, "The `path` is empty for a tree of size 1, whose root is the leaf hash"; 2.1, MTH of one entry |
+| `invalid/cddl-root-as-leaf-empty-data-hash.cbor` | rejected | `data-hash` is not 32 bytes | 2.2, `ccf-leaf`; 3.2, the `data-hash` check and `data-hash == statement_digest` |
+| `invalid/signature-root-as-leaf-data-hash-32.cbor` | rejected | the signature, because the root is another | 3.2, `verify_cose` over `compute_root` |
+| `invalid/utf8-root-as-leaf-evidence-not-utf8.cbor` | rejected | the proof is not valid CBOR: `internal-evidence` is a text string that is not valid UTF-8; its `data-hash` is empty too | 3.2, the first and the `internal-evidence` checks; RFC 8949 Section 5.3.1 |
+
+`keys.cbor` holds the public test key. `verify.py` runs `verify_inclusion_receipt` of the draft on every vector, and on every `root-as-leaf` vector once more without the checks.
+
+The right leaf `R`:
+
+- `cddl-*` and `signature-*`: `R = ["internal-transaction-hash-000001", "ce:2.5:51654972", "data-hash-of-a-statement-0000001"]`, with both hash values written as 32 ASCII bytes. `SHA-256("ce:2.5:51654972")` happens to be valid UTF-8 (51654972 is the smallest counter for which it is), so `d(R)` is valid UTF-8 and only the checks on `data-hash` stop the first: its size, and its comparison with the statement digest. The signed root is `28a11a835421faebbf4addb5623ad27dca5753798d52182c6f8d0d234577def8`.
+- `utf8-*`: `R = [SHA-256("its"), "ce:2.5:" followed by 64 "b", SHA-256("statement")]`. With hash values that are hash outputs, `d(R)` is valid UTF-8 only by chance, so this is what a real ledger gives. The signed root is `7d78bec57d533d3192f1047b1b47cf6042a37be62cd5fcfa6dc88bb1e52e4cf4`.
+
+## Checks
+
+`validate-cbor-examples.sh` in the parent directory runs both in CI:
+
+- CDDL: `valid/*.cbor` and `invalid/signature-*.cbor` conform to `CCF_Receipt` as extracted from the draft; `invalid/cddl-*.cbor` and `invalid/utf8-*.cbor` do not, both for their empty `data-hash`. The `cddl` tool (0.12.14) accepts a text string that is not valid UTF-8, so the CDDL step alone does not catch the `utf8-*` case.
+- Verification: `verify.py` needs `cbor2` and `cryptography`. The valid vector must verify; `signature-*` must fail on the signature; `cddl-*` must fail on `data-hash` and `utf8-*` on decoding, and both must verify when read without the checks and without the comparison with the statement digest, which shows that these checks are what refuses them.

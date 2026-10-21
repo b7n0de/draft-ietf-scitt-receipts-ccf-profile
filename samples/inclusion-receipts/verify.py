@@ -104,14 +104,23 @@ def verify_inclusion_receipt(raw, key, checks=True):
     verification remain active.
     """
     try:
-        receipt = cbor2.loads(raw)
+        fp = io.BytesIO(raw)
+        receipt = cbor2.load(fp)
+        if fp.read(1):
+            raise ValueError("trailing bytes after the receipt")
     except Exception as e:
         raise Refused(f"receipt is not valid CBOR: {e}")
     if not (isinstance(receipt, cbor2.CBORTag) and receipt.tag == 18 and len(receipt.value) == 4):
         raise Refused("not a tagged COSE_Sign1")
     protected_bytes, unprotected, payload, signature = receipt.value
-    protected = cbor2.loads(protected_bytes)
-    if protected.get(VDS) != 2 or protected.get(1) != -35:
+    try:
+        fp = io.BytesIO(protected_bytes)
+        protected = cbor2.load(fp)
+        if fp.read(1):
+            raise ValueError("trailing bytes after the map")
+    except Exception as e:
+        raise Refused(f"protected header is not valid CBOR: {e}")
+    if not isinstance(protected, Mapping) or protected.get(VDS) != 2 or protected.get(1) != -35:
         raise Refused("protected header")
     if payload is not None:
         raise Refused("payload is not detached")

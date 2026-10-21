@@ -5,10 +5,10 @@
 SCITT                                                        H. Birkholz
 Internet-Draft                                            Fraunhofer SIT
 Intended status: Standards Track                      A. Delignat-Lavaud
-Expires: 17 April 2027                                        C. Fournet
+Expires: 24 April 2027                                        C. Fournet
                                                              A. Chamayou
                                                       Microsoft Research
-                                                         14 October 2026
+                                                         21 October 2026
 
 
                      CCF Profile for COSE Receipts
@@ -37,7 +37,7 @@ Status of This Memo
    time.  It is inappropriate to use Internet-Drafts as reference
    material or to cite them other than as "work in progress."
 
-   This Internet-Draft will expire on 17 April 2027.
+   This Internet-Draft will expire on 24 April 2027.
 
 Copyright Notice
 
@@ -251,10 +251,10 @@ Table of Contents
    the Merkle Tree construction for the selected verifiable data
    structure algorithm.  For CCF_LEDGER_SHA256, this function is SHA256.
 
-   This is the Signed Statement, not the Transparent Statement of
-   Section 7 of [RFC9943], which adds Receipts to that unprotected
-   header.  A Verifier holding a Transparent Statement recovers the
-   preimage as follows:
+   data-hash captures the Signed Statement, not the Transparent
+   Statement of Section 7 of [RFC9943], which adds Receipts to that
+   unprotected header.  A Verifier holding a Transparent Statement
+   recovers the preimage as follows:
 
    1.  Take the COSE_Sign1 of the Transparent Statement.
 

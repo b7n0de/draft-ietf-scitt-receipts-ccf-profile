@@ -177,7 +177,7 @@ The `internal-transaction-hash` and `internal-evidence` values are internal to t
 
 1. Take the `COSE_Sign1` of the Transparent Statement.
 1. Replace its unprotected header with an empty map.
-1. Keep tag 18, and keep the encodings of the protected header, payload and signature byte for byte as received.
+1. Keep tag 18, and keep the encoded values of the protected header, payload and signature as received.
 1. Hash the resulting byte string with `H` (`SHA256` for `CCF_LEDGER_SHA256`).
 
 

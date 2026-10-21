@@ -1,23 +1,19 @@
 #!/usr/bin/env python3
-"""Check the sample inclusion receipts with the draft's verify_inclusion_receipt.
+"""Check fixed inclusion-receipt fixtures with a Python adaptation of the draft pseudocode.
 
-Every receipt is signed with the test key in keys.cbor (ES384 on P-384) for the
-statement digest SHA-256("statement"); the receipts carry no Signed Statement.
-valid/*.cbor must verify. The invalid vectors are named by the check that
-refuses them:
+The fixtures use the public P-384 key in keys.cbor, ES384, and the fixed test
+digest SHA-256 of the ASCII encoding of statement. No Signed Statement is
+included, parsed or verified.
 
-- signature-*: every proof passes the checks of the draft and its data-hash is
-  the statement digest, but the recomputed root is not the one that was signed,
-  with or without the checks;
-- cddl-root-as-leaf-* and utf8-root-as-leaf-*: the root of a larger tree written
-  as a leaf with an empty path and an empty data-hash. Read without the checks
-  of the draft and without the comparison with the statement digest, the leaf
-  hash is the signed root and the signature verifies. With them, cddl-* is
-  refused by the size check on data-hash and utf8-* because its
-  internal-evidence is not valid UTF-8.
+The positive fixture must verify. signature-* must fail signature verification
+both with and without proof validation and the statement-digest comparison.
+cddl-root-as-leaf-* must fail the data-hash size check, and utf8-root-as-leaf-*
+must fail strict CBOR decoding. These latter two fixtures must verify when
+proof validation and the statement-digest comparison are disabled.
 
-cddl-* vectors are also checked against the CDDL by validate-cbor-examples.sh.
-This script does not look for duplicate map keys; none of these vectors has one.
+This checker covers these fixtures, not all profile validation requirements.
+It does not detect duplicate map keys or independently validate the complete
+vdp schema. validate-cbor-examples.sh separately checks the receipt schemas.
 
   pip install cbor2 cryptography
   python3 verify.py [samples/inclusion-receipts]
@@ -54,7 +50,7 @@ def read_key(root):
 
 
 def validate_ccf_inclusion_proof(proof):
-    """The checks of the draft on a decoded ccf-inclusion-proof."""
+    """Check the decoded proof shapes exercised by these fixtures."""
     if not (isinstance(proof, dict) and set(proof) == {1, 2}):
         raise Refused("map keys")
     leaf, path = proof[1], proof[2]
@@ -76,7 +72,7 @@ def validate_ccf_inclusion_proof(proof):
 
 
 def compute_root(proof):
-    """compute_root from the draft."""
+    """Adapt the draft's root calculation; surrogateescape preserves bytes for the unchecked UTF-8 test."""
     its, evidence, data_hash = proof[1]
     evidence_bytes = evidence.encode("utf-8", "surrogateescape")
     h = H(its + H(evidence_bytes) + data_hash)
@@ -99,9 +95,12 @@ def verify_cose(protected, signature, payload, key):
 
 
 def verify_inclusion_receipt(raw, key, checks=True):
-    """verify_inclusion_receipt from the draft. With checks=False the proofs are read without the
-    checks of the draft and without the comparison with the statement digest, and a text string that
-    is not valid UTF-8 is read as its bytes."""
+    """Adapt the inclusion-verification pseudocode for these fixed fixtures.
+
+    checks=False skips proof validation and the statement-digest comparison, and
+    preserves invalid UTF-8 bytes in proof text. Receipt-header checks and signature
+    verification remain active.
+    """
     try:
         receipt = cbor2.loads(raw)
     except Exception as e:

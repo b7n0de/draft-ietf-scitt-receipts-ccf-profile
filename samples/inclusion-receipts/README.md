@@ -20,7 +20,7 @@ internal-evidence         = d(R)                the 96-byte serialization of R
 data-hash                 = empty (in signature-*: the statement digest, 32 bytes)
 ```
 
-where `d` is the serialization of Transaction Components. The leaf hash of that "leaf" is `HASH(HASH(d(L)) || HASH(d(R)))`, the root of the tree, and the signature over that root is valid. Leaf and node hashes are not domain separated. With an empty `data-hash`, what refuses these receipts is the leaf schema and the comparison of `data-hash` with the statement digest; with a `data-hash` of 32 bytes the serialization is 96 bytes, not the 64 of a node, and the root is another.
+Here d is the serialization of Transaction Components. For the two vectors with an empty data-hash, the unchecked leaf calculation gives HASH(HASH(d(L)) || HASH(d(R))), the original two-leaf root. The signature-* vector instead appends the expected 32-byte statement digest, giving a different root. Leaf and node hashes are not domain separated. The empty-data-hash vectors violate the leaf schema and do not match the expected statement digest; the signature-* vector fails signature verification.
 
 ## Files
 
@@ -31,12 +31,12 @@ where `d` is the serialization of Transaction Components. The leaf hash of that 
 | `invalid/signature-root-as-leaf-data-hash-32.cbor` | rejected | the signature, because the root is another | 3.2, `verify_cose` over `compute_root` |
 | `invalid/utf8-root-as-leaf-evidence-not-utf8.cbor` | rejected | the proof is not valid CBOR: `internal-evidence` is a text string that is not valid UTF-8; its `data-hash` is empty too | 3.2, the first and the `internal-evidence` checks; RFC 8949 Section 5.3.1 |
 
-`keys.cbor` holds the public test key. `verify.py` runs `verify_inclusion_receipt` of the draft on every vector, and on every `root-as-leaf` vector once more without the checks.
+keys.cbor holds the public test key. verify.py adapts the draft's inclusion-verification pseudocode for these fixed fixtures. Every root-as-leaf fixture is also checked with proof validation and the statement-digest comparison disabled. The two empty-data-hash fixtures must then verify, while the signature-* fixture must still fail signature verification. This is a fixture checker, not a complete profile verifier.
 
 The right leaf `R`:
 
-- `cddl-*` and `signature-*`: `R = ["internal-transaction-hash-000001", "ce:2.5:51654972", "data-hash-of-a-statement-0000001"]`, with both hash values written as 32 ASCII bytes. `SHA-256("ce:2.5:51654972")` happens to be valid UTF-8 (51654972 is the smallest counter for which it is), so `d(R)` is valid UTF-8 and only the checks on `data-hash` stop the first: its size, and its comparison with the statement digest. The signed root is `28a11a835421faebbf4addb5623ad27dca5753798d52182c6f8d0d234577def8`.
-- `utf8-*`: `R = [SHA-256("its"), "ce:2.5:" followed by 64 "b", SHA-256("statement")]`. With hash values that are hash outputs, `d(R)` is valid UTF-8 only by chance; here it is not, as in a real ledger. The signed root is `7d78bec57d533d3192f1047b1b47cf6042a37be62cd5fcfa6dc88bb1e52e4cf4`.
+- `cddl-*` and `signature-*`: R uses the 32 ASCII bytes internal-transaction-hash-000001 as internal-transaction-hash, the text ce:2.5:51654972 as internal-evidence, and the 32 ASCII bytes data-hash-of-a-statement-0000001 as data-hash. The SHA-256 digest of the UTF-8 encoding of ce:2.5:51654972 is valid UTF-8, so the complete 96-byte d(R) is valid UTF-8. For cddl-*, the empty data-hash fails the size check and also differs from the expected statement digest. The signed root is `28a11a835421faebbf4addb5623ad27dca5753798d52182c6f8d0d234577def8`.
+- `utf8-*`: R uses the SHA-256 digest of the ASCII bytes its as internal-transaction-hash, the text ce:2.5: followed by 64 lowercase b characters as internal-evidence, and the SHA-256 digest of the ASCII bytes statement as data-hash. For this particular choice of R, the 96-byte d(R) is not valid UTF-8. This does not imply that every serialization made from hash outputs is invalid UTF-8. The signed root is `7d78bec57d533d3192f1047b1b47cf6042a37be62cd5fcfa6dc88bb1e52e4cf4`.
 
 ## Checks
 

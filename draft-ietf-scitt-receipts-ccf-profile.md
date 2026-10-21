@@ -176,7 +176,7 @@ The `internal-transaction-hash` and `internal-evidence` values are internal to t
 `data-hash` captures the Signed Statement, not the Transparent Statement of {{Section 7 of -scitt-architecture}}, which adds Receipts to that unprotected header. A Verifier holding a Transparent Statement recovers the preimage as follows:
 
 1. Take the `COSE_Sign1` of the Transparent Statement.
-1. Replace its unprotected header with an empty map.
+1. Replace its unprotected header with an empty map ({{Section 6.3 of -scitt-architecture}}).
 1. Keep tag 18, and keep the encoded values of the protected header, payload and signature as received.
 1. Hash the resulting byte string with `H` (`SHA256` for `CCF_LEDGER_SHA256`).
 

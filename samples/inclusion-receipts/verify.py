@@ -7,12 +7,14 @@ valid/*.cbor must verify. The invalid vectors are named by the check that
 refuses them:
 
 - signature-*: every proof passes the checks of the draft and its data-hash is
-  the statement digest, but the recomputed root is not the one that was signed;
+  the statement digest, but the recomputed root is not the one that was signed,
+  with or without the checks;
 - cddl-root-as-leaf-* and utf8-root-as-leaf-*: the root of a larger tree written
-  as a leaf with an empty path. Read without the checks of the draft and without
-  the comparison with the statement digest, the leaf hash is the signed root and
-  the signature verifies. With them, cddl-* is refused for its data-hash and
-  utf8-* because its internal-evidence is not valid UTF-8.
+  as a leaf with an empty path and an empty data-hash. Read without the checks
+  of the draft and without the comparison with the statement digest, the leaf
+  hash is the signed root and the signature verifies. With them, cddl-* is
+  refused by the size check on data-hash and utf8-* because its
+  internal-evidence is not valid UTF-8.
 
 cddl-* vectors are also checked against the CDDL by validate-cbor-examples.sh.
 This script does not look for duplicate map keys; none of these vectors has one.
@@ -160,13 +162,15 @@ def main(root):
         failures += check(got == "verifies", path, got)
 
     for path in vectors(root, "invalid", "signature-*.cbor"):
-        got = outcome(path, key)
-        failures += check(got == "signature", path, got)
+        got, unchecked = outcome(path, key), outcome(path, key, checks=False)
+        failures += check(got == "signature" and unchecked == "signature", path,
+                          f"{got}; without the checks: {unchecked}")
 
-    for prefix, reason in (("cddl-root-as-leaf-", "data-hash"), ("utf8-root-as-leaf-", "proof is not valid CBOR")):
+    for prefix, expected in (("cddl-root-as-leaf-", lambda got: got == "data-hash"),
+                             ("utf8-root-as-leaf-", lambda got: got.startswith("proof is not valid CBOR"))):
         for path in vectors(root, "invalid", prefix + "*.cbor"):
             got, unchecked = outcome(path, key), outcome(path, key, checks=False)
-            failures += check(got.startswith(reason) and unchecked == "verifies", path,
+            failures += check(expected(got) and unchecked == "verifies", path,
                               f"{got}; without the checks: {unchecked}")
 
     print(f"{failures} failure(s)")

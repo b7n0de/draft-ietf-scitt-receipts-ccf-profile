@@ -173,7 +173,7 @@ The `internal-transaction-hash` and `internal-evidence` values are internal to t
 
 `data-hash` is the hash of the bytes of the Signed Statement as registered: the `COSE_Sign1` encoding with CBOR tag 18 retained ({{Section 6.1 of -scitt-architecture}}) and an empty unprotected header map ({{Section 6.3 of -scitt-architecture}}), other elements as submitted. The hash function used for `data-hash` is also the same hash function `H` as in the Merkle Tree construction for the selected verifiable data structure algorithm. For `CCF_LEDGER_SHA256`, this function is `SHA256`.
 
-This is the Signed Statement, not the Transparent Statement of {{Section 7 of -scitt-architecture}}, which adds Receipts to that unprotected header. A Verifier holding a Transparent Statement recovers the preimage as follows:
+`data-hash` captures the Signed Statement, not the Transparent Statement of {{Section 7 of -scitt-architecture}}, which adds Receipts to that unprotected header. A Verifier holding a Transparent Statement recovers the preimage as follows:
 
 1. Take the `COSE_Sign1` of the Transparent Statement.
 1. Replace its unprotected header with an empty map.

@@ -260,8 +260,8 @@ Table of Contents
 
    2.  Replace its unprotected header with an empty map.
 
-   3.  Keep tag 18, and keep the encodings of the protected header,
-       payload and signature byte for byte as received.
+   3.  Keep tag 18, and keep the encoded values of the protected header,
+       payload and signature as received.
 
    4.  Hash the resulting byte string with H (SHA256 for
        CCF_LEDGER_SHA256).
